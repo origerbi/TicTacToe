@@ -11,11 +11,8 @@ def decode_message():
         root.title("Tic Tac Toe")
         tk.Label(root, text="Tic Tac Toe", font=('Ariel', 25)).pack()
         strings = message.split(" ")
-        messageTurn = ''
-        if strings[1] == "X":
-            status_label = tk.Label(root, text="Your turn", font=('Ariel', 15), bg='green', fg='snow')
-        else:
-            status_label = tk.Label(root, text="Enemy turn", font=('Ariel', 15), bg='green', fg='snow')
+        messageTurn = 'Your turn' if strings[1] == "X" else messageTurn='Enemy turn'
+        status_label = tk.Label(root, text=messageTurn, font=('Ariel', 15), bg='green', fg='snow')
         status_label.pack(fill=tk.X)
         play_area = tk.Frame(root, width=300, height=300, bg='white')
         play_area.pack(pady=10, padx=10)
