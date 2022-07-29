@@ -1,41 +1,67 @@
-# Import socket module
 import socket
+import tkinter as tk
+import sys
+
+def setSign():
+    pass
+def decode_message():
+    if message.startswith("CREATE"):
+        global status_label
+        global buttons
+        root.title("Tic Tac Toe")
+        tk.Label(root, text="Tic Tac Toe", font=('Ariel', 25)).pack()
+        strings = message.split(" ")
+        message
+        if strings[1] == "X":
+            status_label = tk.Label(root, text="Your turn", font=('Ariel', 15), bg='green', fg='snow')
+        else:
+            status_label = tk.Label(root, text="Enemy turn", font=('Ariel', 15), bg='green', fg='snow')
+        status_label.pack(fill=tk.X)
+        play_area = tk.Frame(root, width=300, height=300, bg='white')
+        play_area.pack(pady=10, padx=10)
+        buttons = []
+        for i in range(1,4):
+            for j in range(1,4):
+                buttons.append(tk.Button(play_area, text="", width=10, height=5, command=setSign))
+                buttons[(i-1)*3+(j-1)].grid(row=i, column=j)
+        root.mainloop()
 
 
-def Main():
-	# local host IP '127.0.0.1'
-	host = '127.0.0.1'
+# --- main ---
 
-	# Define the port on which you want to connect
-	port = 12345
+host = '127.0.0.1'
+port = 8080
 
-	s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+s = socket.socket()
+s.connect((host, port))
+print("Connected to the server")
+root = tk.Tk()
+root.resizable(False, False)
+while True:
+    message = s.recv(1024)
+    message = message.decode()
+    decode_message()
+    if root.state != "normal":
+        break
+# def play_again():
+#     current_chr = 'X'
+#     for point in XO_points:
+#         point.button.configure(state=tk.NORMAL)
+#         point.reset()
+#     status_label.configure(text="X's turn")
+#     play_again_button.pack_forget()
+#
+#
+# play_again_button = tk.Button(root, text='Play again', font=('Ariel', 15), command=play_again)
+#
+# status_label.configure(text="X won!")
+#
+#
+# self.button.grid(row=row, column=col)
+# self.button.configure(text=current_chr, bg='snow', fg='black')
+#
+# def disable_game():
+#     for point in XO_points:
+#         point.button.configure(state=tk.DISABLED)
+#     play_again_button.pack()
 
-	# connect to server on local computer
-	s.connect((host,port))
-
-	# message you send to server
-	message = "shaurya says geeksforgeeks"
-	while True:
-
-		# message sent to server
-		s.send(message.encode('ascii'))
-
-		# message received from server
-		data = s.recv(1024)
-
-		# print the received message
-		# here it would be a reverse of sent message
-		print('Received from the server :',str(data.decode('ascii')))
-
-		# ask the client whether he wants to continue
-		ans = input('\nDo you want to continue(y/n) :')
-		if ans == 'y':
-			continue
-		else:
-			break
-	# close the connection
-	s.close()
-
-if __name__ == '__main__':
-	Main()
