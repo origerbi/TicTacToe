@@ -2,17 +2,26 @@ import socket
 import tkinter as tk
 import sys
 
-def setSign():
+def setSign(server, button):
+    row    = button.x      # Row of the button
+    column = button.y
+    message = "SIGN " + str(row) + str(column)
+    server.send(message.encode())
     pass
-def decode_message():
-    if message.startswith("CREATE"):
+
+class customButton:
+    def __init__(self, x, y, server, play_area):
+        self.x = x
+        self.y = y
+        self.button = tk.Button(play_area, text="", width=10, height=5, command=lambda :setSign(server, self))
+
+def decode_message(server):
+    if message == "CREATE":
         global status_label
         global buttons
         root.title("Tic Tac Toe")
         tk.Label(root, text="Tic Tac Toe", font=('Ariel', 25)).pack()
-        strings = message.split(" ")
-        message_turn = 'Your turn' if strings[1] == "X" else 'Enemy turn'
-        status_label = tk.Label(root, text=message_turn, font=('Ariel', 15), bg='green', fg='snow')
+        status_label = tk.Label(root, text="X player turn", font=('Ariel', 15), bg='green', fg='snow')
         status_label.pack(fill=tk.X)
         play_area = tk.Frame(root, width=300, height=300, bg='white')
         root.attributes("-topmost", True)
@@ -20,8 +29,9 @@ def decode_message():
         buttons = []
         for i in range(1,4):
             for j in range(1,4):
-                buttons.append(tk.Button(play_area, text="", width=10, height=5, command=setSign))
-                buttons[(i-1)*3+(j-1)].grid(row=i, column=j)
+                button = customButton(i,j, server, play_area)
+                buttons.append(button)
+                button.button.grid(row=i, column=j)
         root.mainloop()
 
 
@@ -38,7 +48,7 @@ root.resizable(False, False)
 while True:
     message = s.recv(1024)
     message = message.decode()
-    decode_message()
+    decode_message(s)
     if root.state != "normal":
         break
 # def play_again():

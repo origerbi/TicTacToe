@@ -74,45 +74,44 @@ class XOPoint:
 
 
 class Game:
-    def __init__(self, conn_x, conn_o):
+
+    def run_game(self):
+        while True:
+            message = self.connection.recv(1024)
+            print(message.decode())
+    def __init__(self, conn):
         # Popen(['python', 'client.py'])
 
         self.XO_points = []
         self.X_points = []
         self.O_points = []
-        self.connectionX = conn_x
-        self.connectionO = conn_o
+        self.connection = conn
         self.charTurn = "X"
         for x in range(1, 4):
             for y in range(1, 4):
                 XOPoint(x, y)
-        message = "CREATE X"
+        message = "CREATE"
         message = message.encode()
-        self.connectionX.send(message)
-        message = "CREATE O"
-        message = message.encode()
-        self.connectionO.send(message)
+        self.connection.send(message)
+        self.run_game()
 
     def check_win(self):
         for possibility in winning_possibilities:
             if possibility.check(self.X_points):
-                self.connectionX.send("WIN")
-                self.connectionO.send("LOSE")
+                self.connection.send("WIN X")
                 return
             elif possibility.check(self.O_points):
-                self.connectionO.send("WIN")
-                self.connectionX.send("LOSE")
+                self.connection.send("WIN O")
                 return
         if len(self.X_points) + len(self.O_points) == 9:
-            self.connectionX.send("DRAW")
-            self.connectionO.send("DRAW")
+            self.connection.send("DRAW")
 
 
 # --- functions ---
 
-def handle_client(conn_x, conn_o):
+def handle_client(conn):
     print("[thread] starting")
-    Game(conn_x, conn_o)
+    Game(conn)
 
 
 # --- main ---
@@ -130,10 +129,8 @@ all_threads = []
 try:
     while True:
         print("Waiting for client")
-        connectionX, addressX = s.accept()
-        print("Waiting for another client")
-        connectionO, addressO = s.accept()
-        t = threading.Thread(target=handle_client, args=(connectionX, connectionO))
+        connection, address = s.accept()
+        t = threading.Thread(target=handle_client, args=(connection,))
         t.start()
 
         all_threads.append(t)
