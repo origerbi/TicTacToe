@@ -1,7 +1,6 @@
 import socket
 import threading
-import time
-from subprocess import Popen
+
 
 class WinningPossibility:
     def __init__(self, x1, y1, x2, y2, x3, y3):
@@ -44,28 +43,27 @@ class XOPoint:
         self.y = col
         self.value = None
 
-    def set(self, game, char):
-        if not self.value and char == game.charTurn:
-            self.value = char
-            if char == "X":
+    def set(self, game):
+        if not self.value:
+            self.value = game.charTurn
+            if game.charTurn == "X":
                 game.X_points.append(self)
-                game.connectionO.send("SET " + self.x + " " + self.y + " X")
-                game.connectionX.send("SET " + self.x + " " + self.y + " X")
+                msg = "#SET " + str(self.x) + " " + str(self.y) + " X"
+                game.connection.send(msg.encode())
                 game.charTurn = "O"
-                game.connectionX.send("TURN")
-                game.connectionO.send("TURN")
-            elif char == "O":
+                msg = "#TURN O"
+                game.connection.send(msg.encode())
+            elif game.charTurn == "O":
                 game.O_points.append(self)
-                game.connectionO.send("SET " + self.x + " " + self.y + " O")
-                game.connectionX.send("SET " + self.x + " " + self.y + " O")
+                msg = "#SET " + str(self.x) + " " + str(self.y) + " O"
+                game.connection.send(msg.encode())
                 game.charTurn = "X"
-                game.connectionX.send("TURN")
-                game.connectionO.send("TURN")
+                msg = "#TURN X"
+                game.connection.send(msg.encode())
             game.check_win()
 
     def reset(self, game):
-        game.connectionO.send("SET " + self.x + " " + self.y + " -")
-        game.connectionX.send("SET " + self.x + " " + self.y + " -")
+        game.connectionO.send("#SET " + self.x + " " + self.y + " -")
         if self.value == "X":
             game.X_points.remove(self)
         elif self.value == "O":
@@ -78,10 +76,12 @@ class Game:
     def run_game(self):
         while True:
             message = self.connection.recv(1024)
-            print(message.decode())
-    def __init__(self, conn):
-        # Popen(['python', 'client.py'])
+            message = message.decode()
+            if message.startswith("SIGN"):
+                data = message.split(" ")
+                self.XO_points[int(data[1])*3+int(data[2])].set(self)
 
+    def __init__(self, conn):
         self.XO_points = []
         self.X_points = []
         self.O_points = []
@@ -89,8 +89,8 @@ class Game:
         self.charTurn = "X"
         for x in range(1, 4):
             for y in range(1, 4):
-                XOPoint(x, y)
-        message = "CREATE"
+                self.XO_points.append(XOPoint(x, y))
+        message = "#CREATE"
         message = message.encode()
         self.connection.send(message)
         self.run_game()
@@ -98,13 +98,16 @@ class Game:
     def check_win(self):
         for possibility in winning_possibilities:
             if possibility.check(self.X_points):
-                self.connection.send("WIN X")
+                msg = "#WIN X"
+                self.connection.send(msg.encode())
                 return
             elif possibility.check(self.O_points):
-                self.connection.send("WIN O")
+                msg = "#WIN O"
+                self.connection.send(msg.encode())
                 return
         if len(self.X_points) + len(self.O_points) == 9:
-            self.connection.send("DRAW")
+            msg = "#DRAW"
+            self.connection.send(msg.encode())
 
 
 # --- functions ---
