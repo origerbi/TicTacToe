@@ -15,6 +15,7 @@ def decode_message():
         status_label = tk.Label(root, text=message_turn, font=('Ariel', 15), bg='green', fg='snow')
         status_label.pack(fill=tk.X)
         play_area = tk.Frame(root, width=300, height=300, bg='white')
+        root.attributes("-topmost", True)
         play_area.pack(pady=10, padx=10)
         buttons = []
         for i in range(1,4):
