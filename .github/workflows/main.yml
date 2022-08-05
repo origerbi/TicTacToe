@@ -34,4 +34,4 @@ jobs:
 
       # Runs a set of commands using the runners shell
       - name: Build client
-        run: pyinstaller -w --add-data "sounds;sounds" --log-level=WARN client.py --noconfirm
+        run: pyinstaller -w --add-data "sounds:sounds" --log-level=WARN client.py --noconfirm
