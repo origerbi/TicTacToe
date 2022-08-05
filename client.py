@@ -3,12 +3,19 @@ import threading
 import select
 import socket
 import tkinter as tk
-from playsound import playsound
+import pygame
 
 
 
 def play_sound(sound='victory.wav'):
-    playsound(sound, block=False)
+    '''
+    @param sound: The sound to play.
+    Plays a sound file
+    '''
+    
+    pygame.mixer.init() # initialise the pygame
+    pygame.mixer.music.load(sound)
+    pygame.mixer.music.play()
 
 def set_sign(server, button):
     row = button.x - 1  # Row of the button
