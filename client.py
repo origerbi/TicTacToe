@@ -7,12 +7,12 @@ import pygame
 
 
 
-def play_sound(sound='victory.wav'):
+def play_sound(sound):
     '''
     @param sound: The sound to play.
     Plays a sound file
     '''
-    
+
     pygame.mixer.init() # initialise the pygame
     pygame.mixer.music.load(sound)
     pygame.mixer.music.play()
@@ -60,10 +60,10 @@ def decode_message(server, incoming_message):
         status_label.configure(text=incoming_message.split(" ")[1] + " player turn")
     elif incoming_message.startswith("WIN"):
         status_label.configure(text=incoming_message.split(" ")[1] + " won the game!!")
-        play_sound()
+        play_sound('victory.wav')
     elif incoming_message == "DRAW":
         status_label.configure(text="DRAW you are both losers")
-        play_sound()
+        play_sound('draw.wav')
 
 def loop():
     readList,a,b = select.select([s],[],[],0.03)
