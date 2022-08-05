@@ -35,3 +35,15 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Build client
         run: pyinstaller -w --add-data "sounds:sounds" --log-level=WARN client.py --noconfirm
+        
+      - name: Setup git config
+        run: |
+          git config user.name "origerbi"
+          git config user.email "<origerbi19@gmail.com>"
+
+      - name: commit
+        run: |
+          git add dist\
+          git commit -m "new build commit"
+          git push origin master
+
