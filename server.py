@@ -1,6 +1,8 @@
 import socket
 import threading
 
+import tkinter as tk
+
 
 class WinningPossibility:
     def __init__(self, x1, y1, x2, y2, x3, y3):
@@ -77,7 +79,7 @@ class Game:
         while True:
             message = self.connection.recv(1024)
             message = message.decode()
-            if message.startswith("SIGN"):
+            if message.startswith("SIGN") and self.is_running:
                 data = message.split(" ")
                 self.XO_points[int(data[1])*3+int(data[2])].set(self)
 
@@ -87,6 +89,7 @@ class Game:
         self.O_points = []
         self.connection = conn
         self.charTurn = "X"
+        self.is_running = True
         for x in range(1, 4):
             for y in range(1, 4):
                 self.XO_points.append(XOPoint(x, y))
@@ -100,14 +103,17 @@ class Game:
             if possibility.check(self.X_points):
                 msg = "#WIN X"
                 self.connection.send(msg.encode())
+                self.is_running = False
                 return
             elif possibility.check(self.O_points):
                 msg = "#WIN O"
                 self.connection.send(msg.encode())
+                self.is_running = False
                 return
         if len(self.X_points) + len(self.O_points) == 9:
             msg = "#DRAW"
             self.connection.send(msg.encode())
+            self.is_running = False
 
 
 # --- functions ---
@@ -116,6 +122,12 @@ def handle_client(conn):
     print("[thread] starting")
     Game(conn)
 
+def loop():
+    root.after(10, loop)
+    connection, address = s.accept()
+    thread = threading.Thread(target=handle_client, args=(connection,))
+    thread.start()
+    all_threads.append(thread)
 
 # --- main ---
 
@@ -129,18 +141,10 @@ s.bind((host, port))
 s.listen(1)
 
 all_threads = []
-try:
-    while True:
-        print("Waiting for client")
-        connection, address = s.accept()
-        t = threading.Thread(target=handle_client, args=(connection,))
-        t.start()
-
-        all_threads.append(t)
-except KeyboardInterrupt:
-    print("Stopped by Ctrl+C")
-finally:
-    if s:
-        s.close()
-    for t in all_threads:
-        t.join()
+root = tk.Tk()
+root.resizable(True, True)
+root.after(10, loop)
+root.mainloop()
+s.close()
+for t in all_threads:
+    t.join()

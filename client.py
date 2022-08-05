@@ -1,3 +1,5 @@
+import threading
+
 import select
 import socket
 import tkinter as tk
@@ -32,7 +34,11 @@ def decode_message(server, incoming_message):
             for j in range(1, 4):
                 button = CustomButton(i, j, server, play_area)
                 buttons.append(button)
-                button.button.grid(row=i, column=j)
+                button.button.grid(row=i, column=j, sticky="NSEW")
+                play_area.grid_columnconfigure(j, weight=1)
+                play_area.grid_rowconfigure(i, weight=1)
+
+
         root.mainloop()
     elif incoming_message.startswith("SET"):
         data = incoming_message.split(" ")
@@ -41,8 +47,10 @@ def decode_message(server, incoming_message):
         status_label.configure(text=incoming_message.split(" ")[1] + " player turn")
     elif incoming_message.startswith("WIN"):
         status_label.configure(text=incoming_message.split(" ")[1] + " won the game!!")
+        play_sound()
     elif incoming_message == "DRAW":
         status_label.configure(text="DRAW you are both losers")
+        play_sound()
 
 def loop():
     readList,a,b = select.select([s],[],[],0.03)
