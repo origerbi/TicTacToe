@@ -46,6 +46,10 @@ class XOPoint:
         self.value = None
 
     def set(self, game):
+        '''
+        Sets the value of the point to the current player's value
+        '''
+
         if not self.value:
             self.value = game.charTurn
             if game.charTurn == "X":
@@ -99,6 +103,10 @@ class Game:
         self.run_game()
 
     def check_win(self):
+        '''
+        Checks if there is a winner or draw
+        '''
+
         for possibility in winning_possibilities:
             if possibility.check(self.X_points):
                 msg = "#WIN X"

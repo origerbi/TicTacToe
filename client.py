@@ -3,6 +3,12 @@ import threading
 import select
 import socket
 import tkinter as tk
+from playsound import playsound
+
+
+
+def play_sound(sound='victory.wav'):
+    playsound(sound, block=False)
 
 def set_sign(server, button):
     row = button.x - 1  # Row of the button
@@ -28,7 +34,7 @@ def decode_message(server, incoming_message):
         status_label.pack(fill=tk.X)
         play_area = tk.Frame(root, width=300, height=300, bg='white')
         root.attributes("-topmost", True)
-        play_area.pack(pady=10, padx=10)
+        play_area.pack(pady=10, padx=10, expand=True, fill=tk.BOTH)
         buttons = []
         for i in range(1, 4):
             for j in range(1, 4):
@@ -72,7 +78,7 @@ s = socket.socket()
 s.connect((host, port))
 print("Connected to the server")
 root = tk.Tk()
-root.resizable(False, False)
+root.resizable(True, True)
 loop()
 # def play_again():
 #     current_chr = 'X'
