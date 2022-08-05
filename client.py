@@ -35,6 +35,7 @@ def decode_message(server, incoming_message):
     global status_label
     global buttons
     if incoming_message == "CREATE":
+        play_sound('sounds/create.wav')
         root.title("Tic Tac Toe")
         tk.Label(root, text="Tic Tac Toe", font=('Ariel', 25)).pack()
         status_label = tk.Label(root, text="X player turn", font=('Ariel', 15), bg='green', fg='snow')
@@ -58,12 +59,13 @@ def decode_message(server, incoming_message):
         buttons[(int(data[1])-1)*3 + int(data[2])-1].button.configure(text=data[3], bg='snow', fg='black')
     elif incoming_message.startswith("TURN"):
         status_label.configure(text=incoming_message.split(" ")[1] + " player turn")
+        play_sound('sounds/turn.wav')
     elif incoming_message.startswith("WIN"):
         status_label.configure(text=incoming_message.split(" ")[1] + " won the game!!")
-        play_sound('victory.wav')
+        play_sound('sounds/victory.wav')
     elif incoming_message == "DRAW":
         status_label.configure(text="DRAW you are both losers")
-        play_sound('draw.wav')
+        play_sound('sounds/draw.wav')
 
 def loop():
     readList,a,b = select.select([s],[],[],0.03)
