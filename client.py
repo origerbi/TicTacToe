@@ -1,21 +1,21 @@
-import threading
+#!python3.9
 
-import select
 import socket
+import sys
 import tkinter as tk
+
 import pygame
-
-
-
+import select
 def play_sound(sound):
     '''
     @param sound: The sound to play.
     Plays a sound file
     '''
 
-    pygame.mixer.init() # initialise the pygame
+    pygame.mixer.init()  # initialise the pygame
     pygame.mixer.music.load(sound)
     pygame.mixer.music.play()
+
 
 def set_sign(server, button):
     row = button.x - 1  # Row of the button
@@ -51,12 +51,11 @@ def decode_message(server, incoming_message):
                 button.button.grid(row=i, column=j, sticky="NSEW")
                 play_area.grid_columnconfigure(j, weight=1)
                 play_area.grid_rowconfigure(i, weight=1)
-
-
+        server.send(("PLAYERS " + sys.argv[1] + " " + sys.argv[2]).encode())
         root.mainloop()
     elif incoming_message.startswith("SET"):
         data = incoming_message.split(" ")
-        buttons[(int(data[1])-1)*3 + int(data[2])-1].button.configure(text=data[3], bg='snow', fg='black')
+        buttons[(int(data[1]) - 1) * 3 + int(data[2]) - 1].button.configure(text=data[3], bg='snow', fg='black')
     elif incoming_message.startswith("TURN"):
         status_label.configure(text=incoming_message.split(" ")[1] + " player turn")
         play_sound('sounds/turn.wav')
@@ -67,8 +66,9 @@ def decode_message(server, incoming_message):
         status_label.configure(text="DRAW you are both losers")
         play_sound('sounds/draw.wav')
 
+
 def loop():
-    readList,a,b = select.select([s],[],[],0.03)
+    readList, a, b = select.select([s], [], [], 0.03)
     root.after(10, loop)
     if len(readList) == 0:
         return
@@ -77,6 +77,7 @@ def loop():
     messages = message.split("#")
     for msg in messages:
         decode_message(s, msg)
+
 
 # --- main ---
 
@@ -89,6 +90,8 @@ print("Connected to the server")
 root = tk.Tk()
 root.resizable(True, True)
 loop()
+s.send("CLOSE".encode())
+s.close()
 # def play_again():
 #     current_chr = 'X'
 #     for point in XO_points:

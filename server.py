@@ -1,7 +1,12 @@
+#!python3.9
 import socket
+import subprocess
+import sys
 import threading
-
 import tkinter as tk
+from collections import defaultdict
+
+import select
 
 
 class WinningPossibility:
@@ -85,9 +90,17 @@ class Game:
             message = message.decode()
             if message.startswith("SIGN") and self.is_running:
                 data = message.split(" ")
-                self.XO_points[int(data[1])*3+int(data[2])].set(self)
+                self.XO_points[int(data[1]) * 3 + int(data[2])].set(self)
+            if message.startswith("CLOSE"):
+                self.is_running = False
+                break
+            if message.startswith("PLAYERS"):
+                self.playerX = message.split(" ")[1]
+                self.playerO = message.split(" ")[2]
 
     def __init__(self, conn):
+        self.playerO = None
+        self.playerX = None
         self.XO_points = []
         self.X_points = []
         self.O_points = []
@@ -111,11 +124,13 @@ class Game:
             if possibility.check(self.X_points):
                 msg = "#WIN X"
                 self.connection.send(msg.encode())
+                winning_clients[self.playerX] += 1
                 self.is_running = False
                 return
             elif possibility.check(self.O_points):
                 msg = "#WIN O"
                 self.connection.send(msg.encode())
+                winning_clients[self.playerO] += 1
                 self.is_running = False
                 return
         if len(self.X_points) + len(self.O_points) == 9:
@@ -130,13 +145,27 @@ def handle_client(conn):
     print("[thread] starting")
     Game(conn)
 
-def loop():
-    root.after(10, loop)
-    connection, address = s.accept()
-    thread = threading.Thread(target=handle_client, args=(connection,))
-    thread.start()
-    all_threads.append(thread)
 
+def loop():
+    root.after(100, loop)
+    r, w, e = select.select([s], [], [], 0.01)
+    if len(r) > 0:
+        connection, address = s.accept()
+        thread = threading.Thread(target=handle_client, args=(connection,))
+        thread.start()
+        all_threads.append(thread)
+
+def start_client():
+    text1 = textField_client1.get("1.0", "end-1c")
+    text2 = textField_client2.get("1.0", "end-1c")
+    if text1 and text2 and text1 != text2:
+        subprocess.Popen([sys.executable, 'client.py'] + [text1, text2])
+        textField_client1.delete("1.0", "end")
+        textField_client2.delete("1.0", "end")
+    print(winning_clients)
+
+
+winning_clients = defaultdict(int)
 # --- main ---
 
 host = '0.0.0.0'
@@ -150,9 +179,24 @@ s.listen(1)
 
 all_threads = []
 root = tk.Tk()
+root.title("Tic Tac Toe SERVER")
+# Create text widget and specify size.
+textField_client1 = tk.Text(root, height=2, width=25)
+textField_client2 = tk.Text(root, height=2, width=25)
+# Create label
+l = tk.Label(root, text="Enter name of X player:")
+l.config(font=("Courier", 14))
+l.pack()
+textField_client1.pack()
+l = tk.Label(root, text="Enter name of O player:")
+l.config(font=("Courier", 14))
+l.pack()
+textField_client2.pack()
+start_client_button = tk.Button(root, width=10, height=3, text="Start client", command=start_client)
+start_client_button.pack()
 root.resizable(True, True)
 root.after(10, loop)
 root.mainloop()
-s.close()
 for t in all_threads:
     t.join()
+s.close()
