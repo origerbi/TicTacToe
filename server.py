@@ -1,8 +1,10 @@
 #!python3.9
+import datetime
 import socket
 import subprocess
 import sys
 import threading
+import time
 import tkinter as tk
 from collections import defaultdict
 
@@ -85,6 +87,7 @@ class XOPoint:
 class Game:
 
     def run_game(self):
+        time.sleep(0.1)
         while True:
             message = self.connection.recv(1024)
             message = message.decode()
@@ -93,17 +96,38 @@ class Game:
                 self.XO_points[int(data[1]) * 3 + int(data[2])].set(self)
             if message.startswith("CLOSE"):
                 self.is_running = False
+                if self.winner is None:
+                    self.label.config(text=str(
+                        self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " Game closed by client")
                 break
             if message.startswith("PLAYERS"):
                 self.playerX = message.split(" ")[1]
                 self.playerO = message.split(" ")[2]
+                self.label.config(text=str(self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: RUNNING")
+        self.button.destroy()
 
-    def __init__(self, conn):
+    def force_close(self):
+        self.is_running = False
+        message = "QUIT"
+        self.label.config(text=str(
+            self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " Game closed by server")
+        self.winner = "SERVER"
+        self.button.destroy()
+        message = message.encode()
+        self.connection.send(message)
+
+    def __init__(self, conn, number, label, button):
         self.playerO = None
         self.playerX = None
+        self.winner = None
         self.XO_points = []
         self.X_points = []
         self.O_points = []
+        self.date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.label = label
+        self.button = button
+        self.button.configure(command=self.force_close)
+        self.game_number = number
         self.connection = conn
         self.charTurn = "X"
         self.is_running = True
@@ -125,17 +149,29 @@ class Game:
                 msg = "#WIN X"
                 self.connection.send(msg.encode())
                 winning_clients[self.playerX] += 1
+                self.winner = self.playerX
+                self.label.config(text=str(
+                    self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: WINNER -  " + self.winner)
                 self.is_running = False
+                self.button.destroy()
                 return
             elif possibility.check(self.O_points):
                 msg = "#WIN O"
                 self.connection.send(msg.encode())
                 winning_clients[self.playerO] += 1
+                self.winner = self.playerO
+                self.label.config(text=str(
+                    self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: WINNER -  " + self.winner)
                 self.is_running = False
+                self.button.destroy()
                 return
         if len(self.X_points) + len(self.O_points) == 9:
             msg = "#DRAW"
             self.connection.send(msg.encode())
+            self.winner = "Draw"
+            self.label.config(text=str(
+                self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: DRAW")
+            self.button.destroy()
             self.is_running = False
 
 
@@ -143,7 +179,13 @@ class Game:
 
 def handle_client(conn):
     print("[thread] starting")
-    Game(conn)
+    global count
+    count += 1
+    l = tk.Label(root, text="", font=("Helvetica", 12))
+    l.pack()
+    b = tk.Button(root, width=10, height=1, text="FORCE CLOSE")
+    b.pack()
+    Game(conn, count, l, b)
 
 
 def loop():
@@ -154,6 +196,14 @@ def loop():
         thread = threading.Thread(target=handle_client, args=(connection,))
         thread.start()
         all_threads.append(thread)
+    leaderboard_label.config(text="Leaderboard:")
+    list = dict(sorted(winning_clients.items(), key=lambda x: x[1], reverse=True))
+    for client in list:
+        leaderboard_label.config(text=leaderboard_label["text"] + "\n" + client + ": " + str(winning_clients[client]))
+
+
+
+
 
 def start_client():
     text1 = textField_client1.get("1.0", "end-1c")
@@ -162,7 +212,6 @@ def start_client():
         subprocess.Popen([sys.executable, 'client.py'] + [text1, text2])
         textField_client1.delete("1.0", "end")
         textField_client2.delete("1.0", "end")
-    print(winning_clients)
 
 
 winning_clients = defaultdict(int)
@@ -170,7 +219,7 @@ winning_clients = defaultdict(int)
 
 host = '0.0.0.0'
 port = 8080
-
+count = 0
 s = socket.socket()
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
              1)  # solution for "[Error 89] Address already in use". Use before bind()
@@ -194,6 +243,11 @@ l.pack()
 textField_client2.pack()
 start_client_button = tk.Button(root, width=10, height=3, text="Start client", command=start_client)
 start_client_button.pack()
+games_label = tk.Label(root, text="Games:")
+games_label.config(font=("Courier", 14))
+games_label.pack()
+leaderboard_label = tk.Label(root, text="Leaderboard", font=("Helvetica", 12))
+leaderboard_label.pack(side=tk.RIGHT)
 root.resizable(True, True)
 root.after(10, loop)
 root.mainloop()
