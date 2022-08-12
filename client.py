@@ -6,6 +6,7 @@ import tkinter as tk
 
 import pygame
 import select
+
 def play_sound(sound):
     '''
     @param sound: The sound to play.
@@ -36,7 +37,7 @@ def decode_message(server, incoming_message):
     global buttons
     if incoming_message == "CREATE":
         play_sound('sounds/create.wav')
-        root.title("Tic Tac Toe")
+        root.title(sys.argv[1] + " VS " + sys.argv[2])
         tk.Label(root, text="Tic Tac Toe", font=('Ariel', 25)).pack()
         status_label = tk.Label(root, text="X player turn", font=('Ariel', 15), bg='green', fg='snow')
         status_label.pack(fill=tk.X)
@@ -70,9 +71,9 @@ def decode_message(server, incoming_message):
 
 
 def loop():
-    readList, a, b = select.select([s], [], [], 0.03)
+    read_list, _, _ = select.select([s], [], [], 0.03)
     root.after(10, loop)
-    if len(readList) == 0:
+    if len(read_list) == 0:
         return
     message = s.recv(1024)
     message = message.decode()
