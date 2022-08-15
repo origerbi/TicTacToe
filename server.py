@@ -1,3 +1,5 @@
+#!python3.9
+
 import datetime
 import socket
 import subprocess
