@@ -89,30 +89,8 @@ port = 8080
 
 s = socket.socket()
 s.connect((host, port))
-print("Connected to the server")
 root = tk.Tk()
 root.resizable(True, True)
 loop()
 s.send("CLOSE".encode())
 s.close()
-# def play_again():
-#     current_chr = 'X'
-#     for point in XO_points:
-#         point.button.configure(state=tk.NORMAL)
-#         point.reset()
-#     status_label.configure(text="X's turn")
-#     play_again_button.pack_forget()
-#
-#
-# play_again_button = tk.Button(root, text='Play again', font=('Ariel', 15), command=play_again)
-#
-# status_label.configure(text="X won!")
-#
-#
-# self.button.grid(row=row, column=col)
-# self.button.configure(text=current_chr, bg='snow', fg='black')
-#
-# def disable_game():
-#     for point in XO_points:
-#         point.button.configure(state=tk.DISABLED)
-#     play_again_button.pack()

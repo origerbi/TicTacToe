@@ -75,16 +75,39 @@ class XOPoint:
                 game.connection.send(msg.encode())
             game.check_win()
 
-    def reset(self, game):
-        game.connectionO.send("#SET " + self.x + " " + self.y + " -")
-        if self.value == "X":
-            game.X_points.remove(self)
-        elif self.value == "O":
-            game.O_points.remove(self)
-        self.value = None
-
 
 class Game:
+
+    def __init__(self, conn, number, label, button):
+        """
+        initializes the game and sends to client message of create, which tells the client to create it's GUI.
+        :param conn: connection socket
+        :param number: game's number
+        :param label: label representing the game status in the GUI of the server
+        :param button: button for force closing the game in the GUI of the server
+        """
+
+        self.playerO = None
+        self.playerX = None
+        self.winner = None
+        self.XO_points = []
+        self.X_points = []
+        self.O_points = []
+        self.date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.label = label
+        self.button = button
+        self.button.configure(command=self.force_close)
+        self.game_number = number
+        self.connection = conn
+        self.charTurn = "X"
+        self.is_running = True
+        for x in range(1, 4):
+            for y in range(1, 4):
+                self.XO_points.append(XOPoint(x, y))
+        message = "#CREATE"
+        message = message.encode()
+        self.connection.send(message)
+        self.run_game()
 
     def run_game(self):
         time.sleep(0.1)
@@ -103,7 +126,8 @@ class Game:
             if message.startswith("PLAYERS"):
                 self.playerX = message.split(" ")[1]
                 self.playerO = message.split(" ")[2]
-                self.label.config(text=str(self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: RUNNING")
+                self.label.config(text=str(
+                    self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: RUNNING")
         self.button.destroy()
 
     def force_close(self):
@@ -140,9 +164,10 @@ class Game:
         self.run_game()
 
     def check_win(self):
-        '''
-        Checks if there is a winner or draw
-        '''
+        """
+        Checks if there is a winner or draw.
+        Send messages appropriately to the client and removes the force close button from the server gui.
+        """
 
         for possibility in winning_possibilities:
             if possibility.check(self.X_points):
@@ -178,14 +203,17 @@ class Game:
 # --- functions ---
 
 def handle_client(conn):
-    print("[thread] starting")
-    global count
-    count += 1
-    l = tk.Label(root, text="", font=("Helvetica", 12))
-    l.pack()
+    """
+    starts a new game for the client that connected to the server. it does it on a new thread. adds the option to force close the game.
+    :param conn: the connection socket to the server
+    """
+    global client_num
+    client_num += 1
+    label = tk.Label(root, text="", font=("Helvetica", 12))
+    label.pack()
     b = tk.Button(root, width=10, height=1, text="FORCE CLOSE")
     b.pack()
-    Game(conn, count, l, b)
+    Game(conn, client_num, label, b)
 
 
 def loop():
@@ -196,61 +224,75 @@ def loop():
         thread = threading.Thread(target=handle_client, args=(connection,))
         thread.start()
         all_threads.append(thread)
+    # update leaderboard
     leaderboard_label.config(text="Leaderboard:")
-    list = dict(sorted(winning_clients.items(), key=lambda x: x[1], reverse=True))
-    for client in list:
+    for client in dict(sorted(winning_clients.items(), key=lambda x: x[1], reverse=True)):
         leaderboard_label.config(text=leaderboard_label["text"] + "\n" + client + ": " + str(winning_clients[client]))
 
 
+def start_client(text_field_client1, text_field_client2):
+    """
+    starts the client with the names specified in the text fields, confirms they are valid names beforehand.
+    :param text_field_client1: text field of competitor 1 (player X)
+    :param text_field_client2: text field of competitor 2 (player O)
+    """
 
-
-
-def start_client():
-    text1 = textField_client1.get("1.0", "end-1c")
-    text2 = textField_client2.get("1.0", "end-1c")
+    text1 = text_field_client1.get("1.0", "end-1c")
+    text2 = text_field_client2.get("1.0", "end-1c")
     if text1 and text2 and text1 != text2:
         subprocess.Popen([sys.executable, 'client.py'] + [text1, text2])
         textField_client1.delete("1.0", "end")
         textField_client2.delete("1.0", "end")
 
 
-winning_clients = defaultdict(int)
+# initializing GUI of the server
+def init_gui():
+    """
+    Initializes the GUI of the server
+    """
+
+    global root
+    root = tk.Tk()
+    root.title("Tic Tac Toe SERVER")
+    # Create text fields for clients names
+    text_field_client1 = tk.Text(root, height=2, width=25)
+    text_field_client2 = tk.Text(root, height=2, width=25)
+    # Create label
+    l = tk.Label(root, text="Enter name of X player:")
+    l.config(font=("Courier", 14))
+    l.pack()
+    text_field_client1.pack()
+    l = tk.Label(root, text="Enter name of O player:")
+    l.config(font=("Courier", 14))
+    l.pack()
+    text_field_client2.pack()
+    start_client_button = tk.Button(root, width=10, height=3, text="Start client",
+                                    command=lambda: start_client(text_field_client1, text_field_client2))
+    start_client_button.pack()
+    games_label = tk.Label(root, text="Games:")
+    games_label.config(font=("Courier", 14))
+    games_label.pack()
+    global leaderboard_label
+    leaderboard_label = tk.Label(root, text="Leaderboard", font=("Helvetica", 12))
+    leaderboard_label.pack(side=tk.RIGHT)
+    root.resizable(True, True)
+    root.after(10, loop)
+    root.mainloop()
+
+
 # --- main ---
 
-host = '0.0.0.0'
-port = 8080
-count = 0
-s = socket.socket()
-s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
-             1)  # solution for "[Error 89] Address already in use". Use before bind()
-s.bind((host, port))
-s.listen(1)
-
-all_threads = []
-root = tk.Tk()
-root.title("Tic Tac Toe SERVER")
-# Create text widget and specify size.
-textField_client1 = tk.Text(root, height=2, width=25)
-textField_client2 = tk.Text(root, height=2, width=25)
-# Create label
-l = tk.Label(root, text="Enter name of X player:")
-l.config(font=("Courier", 14))
-l.pack()
-textField_client1.pack()
-l = tk.Label(root, text="Enter name of O player:")
-l.config(font=("Courier", 14))
-l.pack()
-textField_client2.pack()
-start_client_button = tk.Button(root, width=10, height=3, text="Start client", command=start_client)
-start_client_button.pack()
-games_label = tk.Label(root, text="Games:")
-games_label.config(font=("Courier", 14))
-games_label.pack()
-leaderboard_label = tk.Label(root, text="Leaderboard", font=("Helvetica", 12))
-leaderboard_label.pack(side=tk.RIGHT)
-root.resizable(True, True)
-root.after(10, loop)
-root.mainloop()
-for t in all_threads:
-    t.join()
-s.close()
+if __name__ == "__main__":
+    host = '0.0.0.0'
+    port = 8080
+    client_num = 0
+    s = socket.socket()
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
+                 1)  # solution for "[Error 89] Address already in use". Use before bind()
+    s.bind((host, port))
+    s.listen(1)
+    all_threads = []
+    init_gui()
+    for t in all_threads:
+        t.join()
+    s.close()
