@@ -8,11 +8,10 @@ import pygame
 import select
 
 def play_sound(sound):
-    '''
-    @param sound: The sound to play.
+    """
     Plays a sound file
-    '''
-
+    :param sound: The sound to play.
+    """
     pygame.mixer.init()  # initialise the pygame
     pygame.mixer.music.load(sound)
     pygame.mixer.music.play()

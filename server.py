@@ -1,4 +1,3 @@
-#!python3.9
 import datetime
 import socket
 import subprocess
@@ -21,6 +20,13 @@ class WinningPossibility:
         self.y3 = y3
 
     def check(self, points):
+        """
+        checks if the points are in the winning possibility
+
+        :param points: list of points
+        :return: True if the points are in the winning possibility, False otherwise
+        """
+
         p1_satisfied = False
         p2_satisfied = False
         p3_satisfied = False
@@ -33,6 +39,8 @@ class WinningPossibility:
                 p3_satisfied = True
         return all([p1_satisfied, p2_satisfied, p3_satisfied])
 
+
+winning_clients = defaultdict(int)
 
 winning_possibilities = [
     WinningPossibility(1, 1, 1, 2, 1, 3),
@@ -48,14 +56,19 @@ winning_possibilities = [
 
 class XOPoint:
     def __init__(self, row, col):
+        """
+        :param row: row number of point in grid
+        :param col: column number of point in grid
+        """
+
         self.x = row
         self.y = col
         self.value = None
 
     def set(self, game):
-        '''
-        Sets the value of the point to the current player's value
-        '''
+        """
+        Sets the value of the point to the current player's value and sends message to client to switch turns(if set a piece).
+        """
 
         if not self.value:
             self.value = game.charTurn
@@ -131,6 +144,10 @@ class Game:
         self.button.destroy()
 
     def force_close(self):
+        """
+        Closes the game and sends a message to the client to close the game
+        """
+
         self.is_running = False
         message = "QUIT"
         self.label.config(text=str(
@@ -139,29 +156,6 @@ class Game:
         self.button.destroy()
         message = message.encode()
         self.connection.send(message)
-
-    def __init__(self, conn, number, label, button):
-        self.playerO = None
-        self.playerX = None
-        self.winner = None
-        self.XO_points = []
-        self.X_points = []
-        self.O_points = []
-        self.date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.label = label
-        self.button = button
-        self.button.configure(command=self.force_close)
-        self.game_number = number
-        self.connection = conn
-        self.charTurn = "X"
-        self.is_running = True
-        for x in range(1, 4):
-            for y in range(1, 4):
-                self.XO_points.append(XOPoint(x, y))
-        message = "#CREATE"
-        message = message.encode()
-        self.connection.send(message)
-        self.run_game()
 
     def check_win(self):
         """
@@ -217,9 +211,14 @@ def handle_client(conn):
 
 
 def loop():
+    """
+    Main loop for checking new clients that want to connect to the server.
+    checks for new connections every 0.1 seconds and updates the leaderboard.
+    """
+
     root.after(100, loop)
-    r, w, e = select.select([s], [], [], 0.01)
-    if len(r) > 0:
+    read, _, _ = select.select([s], [], [], 0.01)
+    if len(read) > 0:
         connection, address = s.accept()
         thread = threading.Thread(target=handle_client, args=(connection,))
         thread.start()
@@ -241,8 +240,8 @@ def start_client(text_field_client1, text_field_client2):
     text2 = text_field_client2.get("1.0", "end-1c")
     if text1 and text2 and text1 != text2:
         subprocess.Popen([sys.executable, 'client.py'] + [text1, text2])
-        textField_client1.delete("1.0", "end")
-        textField_client2.delete("1.0", "end")
+        text_field_client1.delete("1.0", "end")
+        text_field_client2.delete("1.0", "end")
 
 
 # initializing GUI of the server
