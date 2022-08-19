@@ -81,14 +81,14 @@ def loop():
 
 
 # --- main ---
+if __name__ == "__main__":
+    host = '127.0.0.1'
+    port = 8080
 
-host = '127.0.0.1'
-port = 8080
-
-s = socket.socket()
-s.connect((host, port))
-root = tk.Tk()
-root.resizable(True, True)
-loop()
-s.send("CLOSE".encode())
-s.close()
+    s = socket.socket()
+    s.connect((host, port))
+    root = tk.Tk()
+    root.resizable(True, True)
+    loop()
+    s.send("CLOSE".encode())
+    s.close()
