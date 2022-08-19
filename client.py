@@ -7,6 +7,7 @@ import tkinter as tk
 import pygame
 import select
 
+
 def play_sound(sound):
     """
     Plays a sound file
@@ -65,8 +66,6 @@ def decode_message(server, incoming_message):
     elif incoming_message == "DRAW":
         status_label.configure(text="DRAW you are both losers")
         play_sound('sounds/draw.wav')
-    elif incoming_message == "QUIT":
-        root.destroy()
 
 
 def loop():

@@ -23,10 +23,10 @@ class WinningPossibility:
 
     def check(self, points):
         """
-        checks if the points are in the winning possibility
+        checks if the points are in the winning possibility.
 
-        :param points: list of points
-        :return: True if the points are in the winning possibility, False otherwise
+        :param: points: list of points.
+        :return: True if the points are in the winning possibility, False otherwise.
         """
 
         p1_satisfied = False
@@ -43,7 +43,8 @@ class WinningPossibility:
 
 
 winning_clients = defaultdict(int)
-
+games_list = []
+root = tk.Tk()
 winning_possibilities = [
     WinningPossibility(1, 1, 1, 2, 1, 3),
     WinningPossibility(2, 1, 2, 2, 2, 3),
@@ -59,8 +60,8 @@ winning_possibilities = [
 class XOPoint:
     def __init__(self, row, col):
         """
-        :param row: row number of point in grid
-        :param col: column number of point in grid
+        :param: row: row number of point in grid
+        :param: col: column number of point in grid
         """
 
         self.x = row
@@ -93,13 +94,11 @@ class XOPoint:
 
 class Game:
 
-    def __init__(self, conn, number, label, button):
+    def __init__(self, conn, number):
         """
-        initializes the game and sends to client message of create, which tells the client to create it's GUI.
-        :param conn: connection socket
+        initializes the game and sends to client message of create, which tells the client to create its GUI.
+        :param: conn: connection socket
         :param number: game's number
-        :param label: label representing the game status in the GUI of the server
-        :param button: button for force closing the game in the GUI of the server
         """
 
         self.playerO = None
@@ -109,9 +108,7 @@ class Game:
         self.X_points = []
         self.O_points = []
         self.date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.label = label
-        self.button = button
-        self.button.configure(command=self.force_close)
+        self.label = ""
         self.game_number = number
         self.connection = conn
         self.charTurn = "X"
@@ -135,29 +132,14 @@ class Game:
             if message.startswith("CLOSE"):
                 self.is_running = False
                 if self.winner is None:
-                    self.label.config(text=str(
-                        self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " Game closed by client")
+                    self.label = str(
+                        self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " Game closed by client"
                 break
             if message.startswith("PLAYERS"):
                 self.playerX = message.split(" ")[1]
                 self.playerO = message.split(" ")[2]
-                self.label.config(text=str(
-                    self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: RUNNING")
-        self.button.destroy()
-
-    def force_close(self):
-        """
-        Closes the game and sends a message to the client to close the game
-        """
-
-        self.is_running = False
-        message = "QUIT"
-        self.label.config(text=str(
-            self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " Game closed by server")
-        self.winner = "SERVER"
-        self.button.destroy()
-        message = message.encode()
-        self.connection.send(message)
+                self.label = str(
+                    self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: RUNNING"
 
     def check_win(self):
         """
@@ -171,28 +153,25 @@ class Game:
                 self.connection.send(msg.encode())
                 winning_clients[self.playerX] += 1
                 self.winner = self.playerX
-                self.label.config(text=str(
-                    self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: WINNER -  " + self.winner)
+                self.label = str(
+                    self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: WINNER -  " + self.winner
                 self.is_running = False
-                self.button.destroy()
                 return
             elif possibility.check(self.O_points):
                 msg = "#WIN O"
                 self.connection.send(msg.encode())
                 winning_clients[self.playerO] += 1
                 self.winner = self.playerO
-                self.label.config(text=str(
-                    self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: WINNER -  " + self.winner)
+                self.label = str(
+                    self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: WINNER -  " + self.winner
                 self.is_running = False
-                self.button.destroy()
                 return
         if len(self.X_points) + len(self.O_points) == 9:
             msg = "#DRAW"
             self.connection.send(msg.encode())
             self.winner = "Draw"
-            self.label.config(text=str(
-                self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: DRAW")
-            self.button.destroy()
+            self.label = str(
+                self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: DRAW"
             self.is_running = False
 
 
@@ -201,15 +180,11 @@ class Game:
 def handle_client(conn):
     """
     starts a new game for the client that connected to the server. it does it on a new thread. adds the option to force close the game.
-    :param conn: the connection socket to the server
+    :param: conn: the connection socket to the server
     """
     global client_num
     client_num += 1
-    label = tk.Label(root, text="", font=("Helvetica", 12))
-    label.pack()
-    b = tk.Button(root, width=10, height=1, text="FORCE CLOSE")
-    b.pack()
-    Game(conn, client_num, label, b)
+    games_list.append(Game(conn, client_num))
 
 
 def loop():
@@ -217,7 +192,6 @@ def loop():
     Main loop for checking new clients that want to connect to the server.
     checks for new connections every 0.1 seconds and updates the leaderboard.
     """
-
     root.after(100, loop)
     read, _, _ = select.select([s], [], [], 0.01)
     if len(read) > 0:
@@ -225,17 +199,13 @@ def loop():
         thread = threading.Thread(target=handle_client, args=(connection,))
         thread.start()
         all_threads.append(thread)
-    # update leaderboard
-    leaderboard_label.config(text="Leaderboard:")
-    for client in dict(sorted(winning_clients.items(), key=lambda x: x[1], reverse=True)):
-        leaderboard_label.config(text=leaderboard_label["text"] + "\n" + client + ": " + str(winning_clients[client]))
 
 
 def start_client(text_field_client1, text_field_client2):
     """
     starts the client with the names specified in the text fields, confirms they are valid names beforehand.
-    :param text_field_client1: text field of competitor 1 (player X)
-    :param text_field_client2: text field of competitor 2 (player O)
+    :param: text_field_client1: text field of competitor 1 (player X)
+    :param: text_field_client2: text field of competitor 2 (player O)
     """
 
     text1 = text_field_client1.get("1.0", "end-1c")
@@ -246,36 +216,60 @@ def start_client(text_field_client1, text_field_client2):
         text_field_client2.delete("1.0", "end")
 
 
+def display_leaderboard(display_frame, list_box):
+    try:
+        display_frame.pack_info()
+    except tk.TclError:
+        display_frame.pack()
+    list_box.delete(0, tk.END)
+    list_box.insert(tk.END, "Leaderboard:")
+    for key in dict(sorted(winning_clients.items(), reverse=True)):
+        list_box.insert(tk.END, key + ": " + str(winning_clients[key]))
+
+
+def display_games(display_frame, list_box):
+    try:
+        display_frame.pack_info()
+    except tk.TclError:
+        display_frame.pack()
+    list_box.delete(0, tk.END)
+    list_box.insert(tk.END, "Games:")
+    for game in games_list:
+        list_box.insert(tk.END, game.label)
+
+
 # initializing GUI of the server
 def init_gui():
     """
     Initializes the GUI of the server
     """
-
-    global root
-    root = tk.Tk()
     root.title("Tic Tac Toe SERVER")
     # Create text fields for clients names
     text_field_client1 = tk.Text(root, height=2, width=25)
     text_field_client2 = tk.Text(root, height=2, width=25)
     # Create label
-    l = tk.Label(root, text="Enter name of X player:")
-    l.config(font=("Courier", 14))
-    l.pack()
+    label_x = tk.Label(root, text="Enter name of X player:")
+    label_x.config(font=("Courier", 14))
+    label_x.pack()
     text_field_client1.pack()
-    l = tk.Label(root, text="Enter name of O player:")
-    l.config(font=("Courier", 14))
-    l.pack()
+    label_o = tk.Label(root, text="Enter name of O player:")
+    label_o.config(font=("Courier", 14))
+    label_o.pack()
     text_field_client2.pack()
-    start_client_button = tk.Button(root, width=10, height=3, text="Start client",
+    start_client_button = tk.Button(root, width=15, height=2, text="Start client",
                                     command=lambda: start_client(text_field_client1, text_field_client2))
     start_client_button.pack()
-    games_label = tk.Label(root, text="Games:")
-    games_label.config(font=("Courier", 14))
-    games_label.pack()
-    global leaderboard_label
-    leaderboard_label = tk.Label(root, text="Leaderboard", font=("Helvetica", 12))
-    leaderboard_label.pack(side=tk.RIGHT)
+    display_frame = tk.Frame(root, width=800, height=400)
+    scrollbar = tk.Scrollbar(display_frame)
+    list_box = tk.Listbox(display_frame, yscrollcommand=scrollbar.set, width=80, height=20)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    list_box.pack(side=tk.LEFT, fill=tk.BOTH)
+    display_leaderboard_button = tk.Button(root, width=15, height=2, text="Display leaderboard",
+                                           command=lambda: display_leaderboard(display_frame, list_box))
+    display_leaderboard_button.pack()
+    display_games_button = tk.Button(root, width=15, height=2, text="Display games",
+                                     command=lambda: display_games(display_frame, list_box))
+    display_games_button.pack()
     root.resizable(True, True)
     root.after(10, loop)
     root.mainloop()
