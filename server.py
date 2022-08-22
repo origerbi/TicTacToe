@@ -12,6 +12,29 @@ from collections import defaultdict
 import select
 
 
+# --- functions ---
+
+def read_winners():
+    """
+    Reads the winners.txt file and returns a dictionary with the winners and their number of wins.
+    """
+
+    winners = defaultdict(int)
+    with open("winners.txt", "r") as file:
+        for line in file:
+            line = line.split(" ")
+            winners[line[0]] = int(line[1])
+    return winners
+
+def write_winners(winners):
+    """
+    Writes the winners.txt file with the winners and their number of wins.
+    """
+
+    with open("winners.txt", "w") as file:
+        for winner in winners:
+            file.write(winner + " " + str(winners[winner]) + "\n")
+
 class WinningPossibility:
     def __init__(self, x1, y1, x2, y2, x3, y3):
         self.x1 = x1
@@ -42,9 +65,11 @@ class WinningPossibility:
         return all([p1_satisfied, p2_satisfied, p3_satisfied])
 
 
-winning_clients = defaultdict(int)
+winning_clients = read_winners()
 games_list = []
 root = tk.Tk()
+closing = False
+root.attributes("-topmost", True)
 winning_possibilities = [
     WinningPossibility(1, 1, 1, 2, 1, 3),
     WinningPossibility(2, 1, 2, 2, 2, 3),
@@ -124,22 +149,26 @@ class Game:
     def run_game(self):
         time.sleep(0.1)
         while True:
-            message = self.connection.recv(1024)
-            message = message.decode()
-            if message.startswith("SIGN") and self.is_running:
-                data = message.split(" ")
-                self.XO_points[int(data[1]) * 3 + int(data[2])].set(self)
-            if message.startswith("CLOSE"):
-                self.is_running = False
-                if self.winner is None:
+            if closing:
+                self.connection.send("QUIT".encode())
+            r, _, _ = select.select([self.connection], [], [], 0.1)
+            if len(r) > 0:
+                message = self.connection.recv(1024)
+                message = message.decode()
+                if message.startswith("SIGN") and self.is_running:
+                    data = message.split(" ")
+                    self.XO_points[int(data[1]) * 3 + int(data[2])].set(self)
+                if message.startswith("CLOSE"):
+                    self.is_running = False
+                    if self.winner is None:
+                        self.label = str(
+                            self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " Game closed by client"
+                    break
+                if message.startswith("PLAYERS"):
+                    self.playerX = message.split(" ")[1]
+                    self.playerO = message.split(" ")[2]
                     self.label = str(
-                        self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " Game closed by client"
-                break
-            if message.startswith("PLAYERS"):
-                self.playerX = message.split(" ")[1]
-                self.playerO = message.split(" ")[2]
-                self.label = str(
-                    self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: RUNNING"
+                        self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: RUNNING"
 
     def check_win(self):
         """
@@ -173,9 +202,6 @@ class Game:
             self.label = str(
                 self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: DRAW"
             self.is_running = False
-
-
-# --- functions ---
 
 def handle_client(conn):
     """
@@ -288,6 +314,8 @@ if __name__ == "__main__":
     s.listen(1)
     all_threads = []
     init_gui()
+    closing = True
     for t in all_threads:
         t.join()
     s.close()
+    write_winners(winning_clients)

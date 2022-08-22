@@ -1,9 +1,10 @@
 #!python3.9
-
+import os
 import socket
 import sys
 import tkinter as tk
 
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import select
 
@@ -66,6 +67,10 @@ def decode_message(server, incoming_message):
     elif incoming_message == "DRAW":
         status_label.configure(text="DRAW you are both losers")
         play_sound('sounds/draw.wav')
+    elif incoming_message == "QUIT":
+        s.send("CLOSE".encode())
+        s.close()
+        root.destroy()
 
 
 def loop():
@@ -84,11 +89,13 @@ def loop():
 if __name__ == "__main__":
     host = '127.0.0.1'
     port = 8080
-
-    s = socket.socket()
-    s.connect((host, port))
-    root = tk.Tk()
-    root.resizable(True, True)
-    loop()
-    s.send("CLOSE".encode())
-    s.close()
+    try:
+        s = socket.socket()
+        s.connect((host, port))
+        root = tk.Tk()
+        root.resizable(True, True)
+        loop()
+        s.send("CLOSE".encode())
+        s.close()
+    except:
+        pass
