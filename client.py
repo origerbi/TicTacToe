@@ -2,7 +2,7 @@
 import os
 import socket
 import sys
-import tkinter as tk
+from tkinter import *
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"  # hide the pygame support prompt
 import pygame
 import select
@@ -34,13 +34,30 @@ class CustomButton:
     def __init__(self, x, y, server, play_area):
         self.x = x
         self.y = y
-        self.button = tk.Button(play_area, text="", width=10, height=5, command=lambda: set_sign(server, self))
+        self.button = Button(play_area, text="", width=10, height=5, command=lambda: set_sign(server, self))
 
 
 def play_again(server):
     server.send("RESET".encode())
     frame.destroy()
     pass
+
+def choose_color():
+    x_color = IntVar() 
+    o_color = IntVar()
+
+    x_red = Radiobutton(root, text="red", value=1,variable=x_color).pack( anchor = W )
+
+    x_blue = Radiobutton(root, text="blue", value=2,variable=x_color).pack( anchor = W )
+
+    x_black = Radiobutton(root, text="black", value=3,variable=x_color).pack( anchor = W)
+
+    o_red = Radiobutton(root, text="red", value=1,variable=o_color).pack( anchor = E )
+
+    o_blue = Radiobutton(root, text="blue", value=2,variable=o_color).pack( anchor = E )
+
+    o_black = Radiobutton(root, text="black", value=3,variable=o_color).pack( anchor = E)
+
 
 
 def decode_message(server, incoming_message):
@@ -56,14 +73,15 @@ def decode_message(server, incoming_message):
     if incoming_message == "CREATE":
         play_sound('sounds/create.wav')
         root.title(sys.argv[1] + " VS " + sys.argv[2])
-        frame = tk.Frame(root, width=500, height=500)
-        tk.Label(frame, text="Tic Tac Toe", font=('Ariel', 25)).pack()
-        status_label = tk.Label(frame, text="X player turn", font=('Ariel', 15), bg='green', fg='snow')
-        status_label.pack(fill=tk.X)
-        play_area = tk.Frame(frame, width=300, height=300, bg='white')
+        frame = Frame(root, width=500, height=500)
+        Label(frame, text="Tic Tac Toe", font=('Ariel', 25)).pack()
+        status_label = Label(frame, text="X player turn", font=('Ariel', 15), bg='green', fg='snow')
+        status_label.pack(fill=X)
+        play_area = Frame(frame, width=300, height=300, bg='white')
         root.attributes("-topmost", True)
-        play_area.pack(pady=10, padx=10, expand=True, fill=tk.BOTH)
+        play_area.pack(pady=10, padx=10, expand=True, fill=BOTH)
         buttons = []
+        choose_color()
         for i in range(1, 4):
             for j in range(1, 4):
                 button = CustomButton(i, j, server, play_area)
@@ -71,7 +89,7 @@ def decode_message(server, incoming_message):
                 button.button.grid(row=i, column=j, sticky="NSEW")
                 play_area.grid_columnconfigure(j, weight=1)
                 play_area.grid_rowconfigure(i, weight=1)
-        play_again_button = tk.Button(frame, text="Play Again", command=lambda: play_again(server))
+        play_again_button = Button(frame, text="Play Again", command=lambda: play_again(server))
         server.send(("PLAYERS " + sys.argv[1] + " " + sys.argv[2]).encode())
         frame.pack()
         root.mainloop()
@@ -114,7 +132,7 @@ if __name__ == "__main__":
     try:
         s = socket.socket()
         s.connect((host, port))
-        root = tk.Tk()
+        root = Tk()
         root.resizable(True, True)
         loop()
         s.send("CLOSE".encode())
