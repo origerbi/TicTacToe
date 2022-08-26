@@ -18,6 +18,8 @@ def read_winners():
 
     winners = defaultdict(int)
     with open("winners.txt", "r") as file:
+        if file.readline() == "":
+            return winners
         for line in file:
             line = line.split(" ")
             winners[line[0]] = int(line[1])
