@@ -45,19 +45,10 @@ def play_again(server):
 def choose_color():
     x_color = IntVar() 
     o_color = IntVar()
-
-    x_red = Radiobutton(root, text="red", value=1,variable=x_color).pack( anchor = W )
-
-    x_blue = Radiobutton(root, text="blue", value=2,variable=x_color).pack( anchor = W )
-
-    x_black = Radiobutton(root, text="black", value=3,variable=x_color).pack( anchor = W)
-
-    o_red = Radiobutton(root, text="red", value=1,variable=o_color).pack( anchor = E )
-
-    o_blue = Radiobutton(root, text="blue", value=2,variable=o_color).pack( anchor = E )
-
-    o_black = Radiobutton(root, text="black", value=3,variable=o_color).pack( anchor = E)
-
+    colors = ['red', 'blue', 'black']
+    for color in colors:
+        Radiobutton(frame, text='x '+ color, variable=x_color, value=colors.index(color), command=lambda: print(x_color.get())).pack(anchor = W)
+        Radiobutton(frame, text='o '+ color, variable=o_color, value=colors.index(color), command=lambda: print(o_color.get())).pack(anchor = E)
 
 
 def decode_message(server, incoming_message):
