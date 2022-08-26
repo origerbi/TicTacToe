@@ -43,12 +43,16 @@ def play_again(server):
     pass
 
 def choose_color():
+    radio_frame = Frame(root)
+    radio_frame.pack(side="top", fill="both", expand=True)
+    radio_frame.grid_columnconfigure((0,1), weight=1, uniform="equal")
+
     x_color = IntVar() 
     o_color = IntVar()
     colors = ['red', 'blue', 'black']
-    for color in colors:
-        Radiobutton(frame, text='x '+ color, variable=x_color, value=colors.index(color), command=lambda: print(x_color.get())).pack(anchor = W)
-        Radiobutton(frame, text='o '+ color, variable=o_color, value=colors.index(color), command=lambda: print(o_color.get())).pack(anchor = E)
+    for index , color in enumerate(colors):
+        Radiobutton(radio_frame, text='x '+ color, variable=x_color, value=index, command=lambda: print(x_color.get())).grid(row=index, column=0, sticky="w")
+        Radiobutton(radio_frame, text='o '+ color, variable=o_color, value=index, command=lambda: print(o_color.get())).grid(row=index, column=1, sticky="e")
 
 
 def decode_message(server, incoming_message):
