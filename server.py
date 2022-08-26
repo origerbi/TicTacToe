@@ -8,11 +8,8 @@ import threading
 import time
 import tkinter as tk
 from collections import defaultdict
-
 import select
 
-
-# --- functions ---
 
 def read_winners():
     """
@@ -29,6 +26,7 @@ def read_winners():
 def write_winners(winners):
     """
     Writes the winners.txt file with the winners and their number of wins.
+    :param: winners: the dictionary with the winners and their number of wins
     """
 
     with open("winners.txt", "w") as file:
@@ -243,6 +241,10 @@ def start_client(text_field_client1, text_field_client2):
 
 
 def display_leaderboard(display_frame, list_box):
+    '''
+    displays the leaderboard in the list box.
+    :param display_frame: the frame to display the leaderboard in
+    :param list_box: the list box to display the leaderboard in'''
     try:
         display_frame.pack_info()
     except tk.TclError:
@@ -254,6 +256,10 @@ def display_leaderboard(display_frame, list_box):
 
 
 def display_games(display_frame, list_box):
+    '''
+    displays the games in the list box.
+    :param display_frame: the frame to display the games in
+    :param list_box: the list box to display the games in'''
     try:
         display_frame.pack_info()
     except tk.TclError:
@@ -264,7 +270,6 @@ def display_games(display_frame, list_box):
         list_box.insert(tk.END, game.label)
 
 
-# initializing GUI of the server
 def init_gui():
     """
     Initializes the GUI of the server

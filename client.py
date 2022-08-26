@@ -4,7 +4,7 @@ import socket
 import sys
 import tkinter as tk
 
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"       # hide the pygame support prompt
 import pygame
 import select
 
@@ -20,6 +20,11 @@ def play_sound(sound):
 
 
 def set_sign(server, button):
+    '''
+    Sets the sign of the button.
+    :param server: The server socket.
+    :param button: The button to set the sign of.
+    '''
     row = button.x - 1  # Row of the button
     column = button.y - 1
     sent_message = "SIGN " + str(row) + " " + str(column)
@@ -34,6 +39,11 @@ class CustomButton:
 
 
 def decode_message(server, incoming_message):
+    '''
+    Decodes the incoming message and performs the appropriate action.
+    :param server: The server socket.
+    :param incoming_message: The message to decode.
+    '''
     global status_label
     global buttons
     if incoming_message == "CREATE":
