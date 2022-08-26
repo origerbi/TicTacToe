@@ -25,6 +25,7 @@ def read_winners():
             winners[line[0]] = int(line[1])
     return winners
 
+
 def read_games():
     """
     Reads the games.txt file and returns a dictionary with the games and their winner.
@@ -49,6 +50,7 @@ def write_winners(winners):
     with open("winners.txt", "w") as file:
         for winner in winners:
             file.write(winner + " " + str(winners[winner]) + "\n")
+
 
 def write_games(games):
     """
@@ -276,14 +278,19 @@ def start_client(text_field_client1, text_field_client2):
 
     text1 = text_field_client1.get("1.0", "end-1c")
     text2 = text_field_client2.get("1.0", "end-1c")
-    if text1 == text2:
-        same_name_label = tk.Label(root, text="Names cannot be the same",bg='RED')
+    if text1 == "" or text2 == "":
+        empty_name_label = tk.Label(root, text="Names cannot be the empty", bg='RED')
+        empty_name_label.pack()
+        root.after(2000, empty_name_label.destroy)
+    elif text1 == text2:
+        same_name_label = tk.Label(root, text="Names cannot be the same", bg='RED')
         same_name_label.pack()
-        root.after(2000, lambda:  same_name_label.destroy())
-    if text1 and text2 and text1 != text2:
+        root.after(2000, same_name_label.destroy)
+    else:
         subprocess.Popen([sys.executable, 'client.py'] + [text1, text2])
-        text_field_client1.delete("1.0", "end")
-        text_field_client2.delete("1.0", "end")
+
+    text_field_client1.delete("1.0", "end")
+    text_field_client2.delete("1.0", "end")
 
 
 def display_leaderboard(display_frame, list_box):
@@ -374,3 +381,4 @@ if __name__ == "__main__":
         t.join()
     s.close()
     write_winners(winning_clients)
+    write_games(games_list)
