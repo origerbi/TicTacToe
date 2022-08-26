@@ -18,12 +18,27 @@ def read_winners():
 
     winners = defaultdict(int)
     with open("winners.txt", "r") as file:
-        if file.readline() == "":
-            return winners
         for line in file:
+            if line == "":
+                break
             line = line.split(" ")
             winners[line[0]] = int(line[1])
     return winners
+
+def read_games():
+    """
+    Reads the games.txt file and returns a dictionary with the games and their winner.
+    """
+    global client_num
+    with open("games.txt", "r") as file:
+        line = file.readline()
+        if line == "":
+            client_num = 0
+            return
+        client_num = int(line)
+        for line in file:
+            old_games.append(line)
+
 
 def write_winners(winners):
     """
@@ -34,6 +49,20 @@ def write_winners(winners):
     with open("winners.txt", "w") as file:
         for winner in winners:
             file.write(winner + " " + str(winners[winner]) + "\n")
+
+def write_games(games):
+    """
+    Writes the games.txt file with the games and their winner.
+    :param games: the games and their winner
+    """
+
+    with open("games.txt", "w") as file:
+        file.write(str(client_num) + "\n")
+        for game in old_games:
+            file.write(game)
+        for game in games:
+            file.write(game.label + "\n")
+
 
 class WinningPossibility:
     def __init__(self, x1, y1, x2, y2, x3, y3):
@@ -67,6 +96,8 @@ class WinningPossibility:
 
 winning_clients = read_winners()
 games_list = []
+old_games = []
+client_num = 0
 root = tk.Tk()
 closing = False
 root.attributes("-topmost", True)
@@ -144,9 +175,9 @@ class Game:
         message = "#CREATE"
         message = message.encode()
         self.connection.send(message)
-        self.run_game()
 
     def run_game(self):
+        global client_num
         time.sleep(0.1)
         while True:
             if closing:
@@ -169,6 +200,12 @@ class Game:
                     self.playerO = message.split(" ")[2]
                     self.label = str(
                         self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: RUNNING"
+                if message.startswith("RESET"):
+                    client_num += 1
+                    game = Game(self.connection, client_num)
+                    games_list.append(game)
+                    game.run_game()
+                    break
 
     def check_win(self):
         """
@@ -203,6 +240,7 @@ class Game:
                 self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: DRAW"
             self.is_running = False
 
+
 def handle_client(conn):
     """
     starts a new game for the client that connected to the server. it does it on a new thread. adds the option to force close the game.
@@ -210,7 +248,9 @@ def handle_client(conn):
     """
     global client_num
     client_num += 1
-    games_list.append(Game(conn, client_num))
+    game = Game(conn, client_num)
+    games_list.append(game)
+    game.run_game()
 
 
 def loop():
@@ -247,10 +287,11 @@ def start_client(text_field_client1, text_field_client2):
 
 
 def display_leaderboard(display_frame, list_box):
-    '''
+    """
     displays the leaderboard in the list box.
-    :param display_frame: the frame to display the leaderboard in
-    :param list_box: the list box to display the leaderboard in'''
+    :param: display_frame: the frame to display the leaderboard in
+    :param: list_box: the list box to display the leaderboard in
+    """
     try:
         display_frame.pack_info()
     except tk.TclError:
@@ -262,16 +303,19 @@ def display_leaderboard(display_frame, list_box):
 
 
 def display_games(display_frame, list_box):
-    '''
+    """
     displays the games in the list box.
-    :param display_frame: the frame to display the games in
-    :param list_box: the list box to display the games in'''
+    :param: display_frame: the frame to display the games in
+    :param: list_box: the list box to display the games in
+    """
     try:
         display_frame.pack_info()
     except tk.TclError:
         display_frame.pack()
     list_box.delete(0, tk.END)
     list_box.insert(tk.END, "Games:")
+    for game in old_games:
+        list_box.insert(tk.END, game)
     for game in games_list:
         list_box.insert(tk.END, game.label)
 
@@ -315,9 +359,9 @@ def init_gui():
 # --- main ---
 
 if __name__ == "__main__":
+    read_games()
     host = '0.0.0.0'
     port = 8080
-    client_num = 0
     s = socket.socket()
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
                  1)  # solution for "[Error 89] Address already in use". Use before bind()

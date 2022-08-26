@@ -3,8 +3,7 @@ import os
 import socket
 import sys
 import tkinter as tk
-
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"       # hide the pygame support prompt
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"  # hide the pygame support prompt
 import pygame
 import select
 
@@ -12,7 +11,7 @@ import select
 def play_sound(sound):
     """
     Plays a sound file
-    :param sound: The sound to play.
+    :param: sound: The sound to play.
     """
     pygame.mixer.init()  # initialise the pygame
     pygame.mixer.music.load(sound)
@@ -20,11 +19,11 @@ def play_sound(sound):
 
 
 def set_sign(server, button):
-    '''
+    """
     Sets the sign of the button.
-    :param server: The server socket.
-    :param button: The button to set the sign of.
-    '''
+    :param: server: The server socket.
+    :param: button: The button to set the sign of.
+    """
     row = button.x - 1  # Row of the button
     column = button.y - 1
     sent_message = "SIGN " + str(row) + " " + str(column)
@@ -38,21 +37,30 @@ class CustomButton:
         self.button = tk.Button(play_area, text="", width=10, height=5, command=lambda: set_sign(server, self))
 
 
+def play_again(server):
+    server.send("RESET".encode())
+    frame.destroy()
+    pass
+
+
 def decode_message(server, incoming_message):
-    '''
+    """
     Decodes the incoming message and performs the appropriate action.
-    :param server: The server socket.
-    :param incoming_message: The message to decode.
-    '''
+    :param: server: The server socket.
+    :param: incoming_message: The message to decode.
+    """
     global status_label
     global buttons
+    global play_again_button
+    global frame
     if incoming_message == "CREATE":
         play_sound('sounds/create.wav')
         root.title(sys.argv[1] + " VS " + sys.argv[2])
-        tk.Label(root, text="Tic Tac Toe", font=('Ariel', 25)).pack()
-        status_label = tk.Label(root, text="X player turn", font=('Ariel', 15), bg='green', fg='snow')
+        frame = tk.Frame(root, width=500, height=500)
+        tk.Label(frame, text="Tic Tac Toe", font=('Ariel', 25)).pack()
+        status_label = tk.Label(frame, text="X player turn", font=('Ariel', 15), bg='green', fg='snow')
         status_label.pack(fill=tk.X)
-        play_area = tk.Frame(root, width=300, height=300, bg='white')
+        play_area = tk.Frame(frame, width=300, height=300, bg='white')
         root.attributes("-topmost", True)
         play_area.pack(pady=10, padx=10, expand=True, fill=tk.BOTH)
         buttons = []
@@ -63,7 +71,9 @@ def decode_message(server, incoming_message):
                 button.button.grid(row=i, column=j, sticky="NSEW")
                 play_area.grid_columnconfigure(j, weight=1)
                 play_area.grid_rowconfigure(i, weight=1)
+        play_again_button = tk.Button(frame, text="Play Again", command=lambda: play_again(server))
         server.send(("PLAYERS " + sys.argv[1] + " " + sys.argv[2]).encode())
+        frame.pack()
         root.mainloop()
     elif incoming_message.startswith("SET"):
         data = incoming_message.split(" ")
@@ -74,9 +84,11 @@ def decode_message(server, incoming_message):
     elif incoming_message.startswith("WIN"):
         status_label.configure(text=incoming_message.split(" ")[1] + " won the game!!")
         play_sound('sounds/victory.wav')
+        play_again_button.pack()
     elif incoming_message == "DRAW":
         status_label.configure(text="DRAW you are both losers")
         play_sound('sounds/draw.wav')
+        play_again_button.pack()
     elif incoming_message == "QUIT":
         s.send("CLOSE".encode())
         s.close()
