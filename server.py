@@ -258,7 +258,7 @@ def handle_client(conn):
 def loop():
     """
     Main loop for checking new clients that want to connect to the server.
-    checks for new connections every 0.1 seconds and updates the leaderboard.
+    checks for new connections every 0.1 seconds.
     """
     root.after(100, loop)
     read, _, _ = select.select([s], [], [], 0.01)
@@ -370,8 +370,7 @@ if __name__ == "__main__":
     host = '0.0.0.0'
     port = 8080
     s = socket.socket()
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
-                 1)  # solution for "[Error 89] Address already in use". Use before bind()
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # solution for "[Error 89] Address already in use". Use before bind()
     s.bind((host, port))
     s.listen(1)
     all_threads = []
