@@ -1,4 +1,4 @@
 3
-1. 2022-08-28 09:58:08 PlayerX: abc PlayerO: ad STATUS: WINNER -  abc
-2. 2022-08-28 09:58:12 PlayerX: abc PlayerO: ad STATUS: WINNER -  abc
-3. 2022-08-28 09:58:15 PlayerX: abc PlayerO: ad Game closed by client
+1#2022-09-02 10:09:37#abc#ad#WINNER -  abc
+2#2022-09-02 10:09:43#abc#ad#DRAW
+3#2022-09-02 10:10:11#abc#ad#Game closed by client

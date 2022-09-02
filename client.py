@@ -3,10 +3,10 @@ import os
 import socket
 import sys
 from tkinter import *
+from tkinter.colorchooser import askcolor
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"  # hide the pygame support prompt
 import pygame
 import select
-colors = ['red', 'blue', 'black']
 
 def play_sound(sound):
     """
@@ -43,23 +43,12 @@ def play_again(server):
     pass
 
 
-def start_game(radio_frame):
-    frame.pack()
-    radio_frame.destroy()
-
-
 def choose_color():
     global x_color
     global o_color
-    radio_frame = Frame(root)
-    radio_frame.pack(side="top", fill="both", expand=True)
-    radio_frame.grid_columnconfigure(0, weight=1, uniform="equal")
-    x_color = IntVar()
-    o_color = IntVar()
-    for index, color in enumerate(colors):
-        Radiobutton(radio_frame, text='x ' + color, variable=x_color, value=index).grid(row=index, column=0, sticky="w")
-        Radiobutton(radio_frame, text='o ' + color, variable=o_color, value=index).grid(row=index, column=2, sticky="e")
-    Button(radio_frame, text="Submit", command=lambda: start_game(radio_frame)).grid(row=3, column=1)
+    x_color = askcolor(title="Choose X color")
+    o_color = askcolor(title="Choose O color")
+    frame.pack()
 
 
 def decode_message(server, incoming_message):
@@ -96,7 +85,7 @@ def decode_message(server, incoming_message):
         root.mainloop()
     elif incoming_message.startswith("SET"):
         data = incoming_message.split(" ")
-        buttons[(int(data[1]) - 1) * 3 + int(data[2]) - 1].button.configure(text=data[3], bg='snow', fg=colors[x_color.get() if data[3] == "X" else o_color.get()])
+        buttons[(int(data[1]) - 1) * 3 + int(data[2]) - 1].button.configure(text=data[3], bg='snow', fg=x_color[1] if data[3] == "X" else o_color[1])
     elif incoming_message.startswith("TURN"):
         status_label.configure(text=incoming_message.split(" ")[1] + " player turn")
         play_sound('sounds/turn.wav')

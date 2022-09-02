@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 import tkinter as tk
+from tkinter import ttk
 from collections import defaultdict
 import select
 
@@ -186,8 +187,11 @@ class Game:
                 self.connection.send("QUIT".encode())
             r, _, _ = select.select([self.connection], [], [], 0.1)
             if len(r) > 0:
-                message = self.connection.recv(1024)
-                message = message.decode()
+                try:
+                    message = self.connection.recv(1024)
+                    message = message.decode()
+                except ConnectionAbortedError:
+                    message = "CLOSE"
                 if message.startswith("SIGN") and self.is_running:
                     data = message.split(" ")
                     self.XO_points[int(data[1]) * 3 + int(data[2])].set(self)
@@ -195,13 +199,13 @@ class Game:
                     self.is_running = False
                     if self.winner is None:
                         self.label = str(
-                            self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " Game closed by client"
+                            self.game_number) + "#" + self.date + "#" + self.playerX + "#" + self.playerO + "#Game closed by client"
                     break
                 if message.startswith("PLAYERS"):
                     self.playerX = message.split(" ")[1]
                     self.playerO = message.split(" ")[2]
                     self.label = str(
-                        self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: RUNNING"
+                        self.game_number) + "#" + self.date + "#" + self.playerX + "#" + self.playerO + "#RUNNING"
                 if message.startswith("RESET"):
                     client_num += 1
                     game = Game(self.connection, client_num)
@@ -222,7 +226,7 @@ class Game:
                 winning_clients[self.playerX] += 1
                 self.winner = self.playerX
                 self.label = str(
-                    self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: WINNER -  " + self.winner
+                    self.game_number) + "#" + self.date + "#" + self.playerX + "#" + self.playerO + "#WINNER -  " + self.winner
                 self.is_running = False
                 return
             elif possibility.check(self.O_points):
@@ -231,7 +235,7 @@ class Game:
                 winning_clients[self.playerO] += 1
                 self.winner = self.playerO
                 self.label = str(
-                    self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: WINNER -  " + self.winner
+                    self.game_number) + "#" + self.date + "#" + self.playerX + "#" + self.playerO + "#WINNER -  " + self.winner
                 self.is_running = False
                 return
         if len(self.X_points) + len(self.O_points) == 9:
@@ -239,7 +243,7 @@ class Game:
             self.connection.send(msg.encode())
             self.winner = "Draw"
             self.label = str(
-                self.game_number) + ". " + self.date + " PlayerX: " + self.playerX + " PlayerO: " + self.playerO + " STATUS: DRAW"
+                self.game_number) + "#" + self.date + "#" + self.playerX + "#" + self.playerO + "#DRAW"
             self.is_running = False
 
 
@@ -303,10 +307,12 @@ def display_leaderboard(display_frame, list_box):
         display_frame.pack_info()
     except tk.TclError:
         display_frame.pack()
-    list_box.delete(0, tk.END)
-    list_box.insert(tk.END, "Leaderboard:")
-    for key in dict(sorted(winning_clients.items(), reverse=True)):
-        list_box.insert(tk.END, key + ": " + str(winning_clients[key]))
+    list_box.delete(*list_box.get_children())
+    list_box["columns"] = "Wins"
+    list_box.heading("#0", text="Player Name")
+    list_box.heading("Wins", text="Wins")
+    for key in dict(sorted(winning_clients.items(), reverse=False)).keys():
+        list_box.insert(parent='', index='end', iid=key, text=key, values=(winning_clients[key]))
 
 
 def display_games(display_frame, list_box):
@@ -319,12 +325,20 @@ def display_games(display_frame, list_box):
         display_frame.pack_info()
     except tk.TclError:
         display_frame.pack()
-    list_box.delete(0, tk.END)
-    list_box.insert(tk.END, "Games:")
+    list_box.delete(*list_box.get_children())
+    list_box["columns"] = ("Date", "PlayerX", "PlayerO", "Status")
+    list_box.heading("#0", text="Game Number")
+    list_box.heading("Date", text="Date")
+    list_box.heading("PlayerX", text="PlayerX")
+    list_box.heading("PlayerO", text="PlayerO")
+    list_box.heading("Status", text="Status")
+
     for game in old_games:
-        list_box.insert(tk.END, game)
+        strings = game.split("#")
+        list_box.insert(parent='', index='end', iid=strings[0], text=strings[0], values=(strings[1], strings[2], strings[3], strings[4]))
     for game in games_list:
-        list_box.insert(tk.END, game.label)
+        strings = game.label.split("#")
+        list_box.insert(parent='', index='end', iid=strings[0], text=strings[0], values=(strings[1], strings[2], strings[3], strings[4]))
 
 
 def init_gui():
@@ -349,7 +363,7 @@ def init_gui():
     start_client_button.pack()
     display_frame = tk.Frame(root, width=800, height=400)
     scrollbar = tk.Scrollbar(display_frame)
-    list_box = tk.Listbox(display_frame, yscrollcommand=scrollbar.set, width=80, height=20)
+    list_box = tk.ttk.Treeview(display_frame, yscrollcommand=scrollbar.set)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     list_box.pack(side=tk.LEFT, fill=tk.BOTH)
     display_leaderboard_button = tk.Button(root, width=15, height=2, text="Display leaderboard",
