@@ -106,6 +106,7 @@ old_games = []
 client_num = 0
 root = tk.Tk()
 closing = False
+error_label = None
 root.attributes("-topmost", True)
 winning_possibilities = [
     WinningPossibility(1, 1, 1, 2, 1, 3),
@@ -293,7 +294,8 @@ def start_client(text_field_client1, text_field_client2):
     :param: text_field_client2: text field of competitor 2 (player O)
     """
     global error_label
-    error_label = tk.Label(root, text="", fg="red")
+    if error_label is not None:
+        error_label.destroy()
     text1 = text_field_client1.get("1.0", "end-1c")
     text2 = text_field_client2.get("1.0", "end-1c")
     if text1 == "" or text2 == "":
@@ -303,7 +305,6 @@ def start_client(text_field_client1, text_field_client2):
         error_label = tk.Label(root, text="Names cannot be the same", bg='RED')
         error_label.pack()
     else:
-        error_label.destroy()
         subprocess.Popen([sys.executable, 'client.py'] + [text1, text2])
 
     text_field_client1.delete("1.0", "end")
