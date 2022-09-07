@@ -68,6 +68,9 @@ def write_games(games):
 
 
 class WinningPossibility:
+    """
+    A basic class to represent a winning possibility of X and O.
+    """
     def __init__(self, x1, y1, x2, y2, x3, y3):
         self.x1 = x1
         self.y1 = y1
@@ -117,6 +120,9 @@ winning_possibilities = [
 
 
 class XOPoint:
+    """
+    A basic class to represent a cell in the grid.
+    """
     def __init__(self, row, col):
         """
         :param: row: row number of point in grid
@@ -152,8 +158,11 @@ class XOPoint:
 
 
 class Game:
+    """
+    A class to represent a game session, contains all the logic of the game and the game's listener.
+    """
 
-    def __init__(self, conn, number):
+    def __init__(self, conn, number, starting_player="X"):
         """
         initializes the game and sends to client message of create, which tells the client to create its GUI.
         :param: conn: connection socket
@@ -170,16 +179,20 @@ class Game:
         self.label = ""
         self.game_number = number
         self.connection = conn
-        self.charTurn = "X"
+        self.starting_player = starting_player
+        self.charTurn = starting_player
         self.is_running = True
         for x in range(1, 4):
             for y in range(1, 4):
                 self.XO_points.append(XOPoint(x, y))
-        message = "#CREATE"
+        message = "#CREATE " + starting_player
         message = message.encode()
         self.connection.send(message)
 
     def run_game(self):
+        """
+        runs the game logic and listens to the client's messages.
+        """
         global client_num
         time.sleep(0.1)
         while True:
@@ -208,7 +221,7 @@ class Game:
                         self.game_number) + "#" + self.date + "#" + self.playerX + "#" + self.playerO + "#RUNNING"
                 if message.startswith("RESET"):
                     client_num += 1
-                    game = Game(self.connection, client_num)
+                    game = Game(self.connection, client_num, "O" if self.starting_player == "X" else "X")
                     games_list.append(game)
                     game.run_game()
                     break
@@ -279,18 +292,18 @@ def start_client(text_field_client1, text_field_client2):
     :param: text_field_client1: text field of competitor 1 (player X)
     :param: text_field_client2: text field of competitor 2 (player O)
     """
-
+    global error_label
+    error_label = tk.Label(root, text="", fg="red")
     text1 = text_field_client1.get("1.0", "end-1c")
     text2 = text_field_client2.get("1.0", "end-1c")
     if text1 == "" or text2 == "":
-        empty_name_label = tk.Label(root, text="Names cannot be the empty", bg='RED')
-        empty_name_label.pack()
-        root.after(2000, empty_name_label.destroy)
+        error_label = tk.Label(root, text="Names cannot be the empty", bg='RED')
+        error_label.pack()
     elif text1 == text2:
-        same_name_label = tk.Label(root, text="Names cannot be the same", bg='RED')
-        same_name_label.pack()
-        root.after(2000, same_name_label.destroy)
+        error_label = tk.Label(root, text="Names cannot be the same", bg='RED')
+        error_label.pack()
     else:
+        error_label.destroy()
         subprocess.Popen([sys.executable, 'client.py'] + [text1, text2])
 
     text_field_client1.delete("1.0", "end")
@@ -309,8 +322,8 @@ def display_leaderboard(display_frame, list_box):
         display_frame.pack()
     list_box.delete(*list_box.get_children())
     list_box["columns"] = "Wins"
-    list_box.heading("#0", text="Player Name")
-    list_box.heading("Wins", text="Wins")
+    list_box.heading("#0", text="Player Name", anchor=tk.W)
+    list_box.heading("Wins", text="Wins", anchor=tk.W)
     for key in dict(sorted(winning_clients.items(), reverse=False)).keys():
         list_box.insert(parent='', index='end', iid=key, text=key, values=(winning_clients[key]))
 
@@ -327,11 +340,11 @@ def display_games(display_frame, list_box):
         display_frame.pack()
     list_box.delete(*list_box.get_children())
     list_box["columns"] = ("Date", "PlayerX", "PlayerO", "Status")
-    list_box.heading("#0", text="Game Number")
-    list_box.heading("Date", text="Date")
-    list_box.heading("PlayerX", text="PlayerX")
-    list_box.heading("PlayerO", text="PlayerO")
-    list_box.heading("Status", text="Status")
+    list_box.heading("#0", text="Game Number", anchor=tk.W)
+    list_box.heading("Date", text="Date", anchor=tk.W)
+    list_box.heading("PlayerX", text="PlayerX", anchor=tk.W)
+    list_box.heading("PlayerO", text="PlayerO", anchor=tk.W)
+    list_box.heading("Status", text="Status", anchor=tk.W)
 
     for game in old_games:
         strings = game.split("#")

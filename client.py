@@ -38,12 +38,18 @@ class CustomButton:
 
 
 def play_again(server):
+    """
+    Sends a play again message to the server.
+    :param server: The server socket.
+    """
     server.send("RESET".encode())
     frame.destroy()
-    pass
 
 
 def choose_color():
+    """
+    Chooses the color of the X and O signs.
+    """
     global x_color
     global o_color
     x_color = askcolor(title="Choose X color")
@@ -61,12 +67,13 @@ def decode_message(server, incoming_message):
     global buttons
     global play_again_button
     global frame
-    if incoming_message == "CREATE":
+    if incoming_message.startswith("CREATE"):
+        starting_char = incoming_message.split(" ")[1]
         play_sound('sounds/create.wav')
         root.title(sys.argv[1] + " VS " + sys.argv[2])
         frame = Frame(root, width=500, height=500)
         Label(frame, text="Tic Tac Toe", font=('Ariel', 25)).pack()
-        status_label = Label(frame, text="X player turn", font=('Ariel', 15), bg='green', fg='snow')
+        status_label = Label(frame, text=starting_char + " player turn", font=('Ariel', 15), bg='green', fg='snow')
         status_label.pack(fill=X)
         play_area = Frame(frame, width=300, height=300, bg='white')
         root.attributes("-topmost", True)
