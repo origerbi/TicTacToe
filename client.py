@@ -8,6 +8,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"  # hide the pygame support pro
 import pygame
 import select
 
+is_closing = False
 def play_sound(sound):
     """
     Plays a sound file
@@ -53,6 +54,8 @@ def choose_color():
     global x_color
     global o_color
     x_color = askcolor(title="Choose X color")
+    if is_closing:
+        return
     o_color = askcolor(title="Choose O color")
     frame.pack()
 
@@ -63,6 +66,7 @@ def decode_message(server, incoming_message):
     :param: server: The server socket.
     :param: incoming_message: The message to decode.
     """
+    global is_closing
     global status_label
     global buttons
     global play_again_button
@@ -79,7 +83,6 @@ def decode_message(server, incoming_message):
         root.attributes("-topmost", True)
         play_area.pack(pady=10, padx=10, expand=True, fill=BOTH)
         buttons = []
-        choose_color()
         for i in range(1, 4):
             for j in range(1, 4):
                 button = CustomButton(i, j, server, play_area)
@@ -89,6 +92,7 @@ def decode_message(server, incoming_message):
                 play_area.grid_rowconfigure(i, weight=1)
         play_again_button = Button(frame, text="Play Again", command=lambda: play_again(server))
         server.send(("PLAYERS " + sys.argv[1] + " " + sys.argv[2]).encode())
+        choose_color()
         root.mainloop()
     elif incoming_message.startswith("SET"):
         data = incoming_message.split(" ")
@@ -107,6 +111,7 @@ def decode_message(server, incoming_message):
     elif incoming_message == "QUIT":
         s.send("CLOSE".encode())
         s.close()
+        is_closing = True
         root.destroy()
 
 

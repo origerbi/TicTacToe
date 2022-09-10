@@ -64,7 +64,8 @@ def write_games(games):
         for game in old_games:
             file.write(game)
         for game in games:
-            file.write(game.label + "\n")
+            if game.label != "":
+                file.write(game.label + "\n")
 
 
 class WinningPossibility:
@@ -310,6 +311,15 @@ def start_client(text_field_client1, text_field_client2):
     text_field_client1.delete("1.0", "end")
     text_field_client2.delete("1.0", "end")
 
+def close_display(display_frame, close_button):
+    """
+    closes the display frame and removes the close button from the server gui.
+    :param: display_frame: the frame to
+    :param: close_button: the button to remove
+    """
+    display_frame.pack_forget()
+    close_button.destroy()
+
 
 def display_leaderboard(display_frame, list_box):
     """
@@ -327,6 +337,8 @@ def display_leaderboard(display_frame, list_box):
     list_box.heading("Wins", text="Wins", anchor=tk.W)
     for key in dict(sorted(winning_clients.items(), reverse=False)).keys():
         list_box.insert(parent='', index='end', iid=key, text=key, values=(winning_clients[key]))
+    close_button = tk.Button(root, width=10, text="Close", command=lambda: close_display(display_frame, close_button))
+    close_button.pack(side=tk.BOTTOM)
 
 
 def display_games(display_frame, list_box):
@@ -353,6 +365,8 @@ def display_games(display_frame, list_box):
     for game in games_list:
         strings = game.label.split("#")
         list_box.insert(parent='', index='end', iid=strings[0], text=strings[0], values=(strings[1], strings[2], strings[3], strings[4]))
+    close_button = tk.Button(root, width=10, text="Close", command=lambda: close_display(display_frame, close_button))
+    close_button.pack(side=tk.BOTTOM)
 
 
 def init_gui():
@@ -379,7 +393,7 @@ def init_gui():
     scrollbar = tk.Scrollbar(display_frame)
     list_box = tk.ttk.Treeview(display_frame, yscrollcommand=scrollbar.set)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    list_box.pack(side=tk.LEFT, fill=tk.BOTH)
+    list_box.pack(side=tk.LEFT)
     display_leaderboard_button = tk.Button(root, width=15, height=2, text="Display leaderboard",
                                            command=lambda: display_leaderboard(display_frame, list_box))
     display_leaderboard_button.pack()
